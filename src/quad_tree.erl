@@ -24,7 +24,7 @@
 
 -spec new(BoudingRect :: bounding_rect()) -> {ok, qtree()} | error().
 new(BoundingRect) ->
-        case validate_bounding(BoundingRect) of
+        case validate_bounds(BoundingRect) of
           {ok, valid} ->
             {ok, #qtree_node { point = get_center(BoundingRect),
                                bounds = BoundingRect,
@@ -51,12 +51,46 @@ remove_point(QTree=#qtree_node{}, Point) ->
 remove_point(QTree=#qtree_node{ bounds = BoundingRect }, Point, Value) ->
         case is_in_rect(BoundingRect, Point) of
           true ->
-            {ok, QTree};
+            {ok, add_valid_point(QTree, Point, Value)};
           false ->
             {error, point_no_in_bounding_rect}
         end.
 
-validate_bounding({{X1, Y1}, {X2, Y2}}) ->
+add_valid_point(QTree=#qtree_node{ bounds = BoundingRect, nodes = Nodes }, Point, Value) ->
+        case is_in_rect(BoundingRect, Point) of
+          true ->
+            case Nodes of
+              [] ->
+                QTree;
+              List ->
+                NewNodes = lists:map(fun(QTreeNode) -> add_valid_point(QTreeNode, Point, Value) end, List),
+                QTree#qtree_node { nodes = NewNodes }
+            end;
+          false ->
+            QTree
+        end.
+
+child_nodes({{X1, Y1}, {X2, Y2}}) ->
+        CenterX = X1 + erlang:trunc((X2 - X1) / 2),
+        CenterY = Y1 + erlang:trunc((Y2 - Y1) / 2),
+
+        TopCenter = {CenterX, Y2},
+        TopRight = {X2, Y2},
+
+        CenterLeft = {X1, CenterY},
+        CenterCenter = {CenterX, CenterY},
+
+        BottomLeft = {X1, Y1},
+        BottomCenter = {CenterX, Y1},
+        BottomRight = {X2, Y1},
+
+        NW = #qtree_node { bounds = {CenterLeft, TopCenter} },
+        NE = #qtree_node { bounds = {CenterCenter, TopRight} },
+        SW = #qtree_node { bounds = {BottomLeft, CenterCenter} },
+        SE = #qtree_node { bounds = {BottomCenter, BottomRight} },
+        [NW, NE, SE, SW].
+
+validate_bounds({{X1, Y1}, {X2, Y2}}) ->
         W = erlang:abs(X2 - X1),
         H = erlang:abs(Y2 - Y1),
         case W =:= H of
