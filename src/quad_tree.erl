@@ -61,7 +61,14 @@ add_valid_point(QTree=#qtree_node{ bounds = BoundingRect, nodes = Nodes }, Point
           true ->
             case Nodes of
               [] ->
-                QTree;
+                case is_leaf_node(QTree) of
+                  true ->
+                    QTree#qtree_node { val = Value };
+                  false ->
+                    NewNodes = create_child_nodes(BoundingRect),
+                    NewNodes1 = lists:map(fun(QTreeNode) -> add_valid_point(QTreeNode, Point, Value) end, NewNodes),
+                    QTree#qtree_node { nodes = NewNodes1 }
+                end;
               List ->
                 NewNodes = lists:map(fun(QTreeNode) -> add_valid_point(QTreeNode, Point, Value) end, List),
                 QTree#qtree_node { nodes = NewNodes }
@@ -70,7 +77,7 @@ add_valid_point(QTree=#qtree_node{ bounds = BoundingRect, nodes = Nodes }, Point
             QTree
         end.
 
-child_nodes({{X1, Y1}, {X2, Y2}}) ->
+create_child_nodes({{X1, Y1}, {X2, Y2}}) ->
         CenterX = X1 + erlang:trunc((X2 - X1) / 2),
         CenterY = Y1 + erlang:trunc((Y2 - Y1) / 2),
 
