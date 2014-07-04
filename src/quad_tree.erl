@@ -90,6 +90,9 @@ child_nodes({{X1, Y1}, {X2, Y2}}) ->
         SE = #qtree_node { bounds = {BottomCenter, BottomRight} },
         [NW, NE, SE, SW].
 
+is_leaf_node(#qtree_node{ bounds = {{X1, _}, {X2, _}} }) ->
+        X2 - X1 =:= 0.
+
 validate_bounds({{X1, Y1}, {X2, Y2}}) ->
         W = erlang:abs(X2 - X1),
         H = erlang:abs(Y2 - Y1),
