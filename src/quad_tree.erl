@@ -5,7 +5,7 @@
 -type bounding_rect() :: {LeftTop :: point(), RightBottom :: point()}.
 
 %-record(qtree_leaf_node, { bounds :: bounding_rect(), point :: point(), val :: any()}).
--record(qtree_node, { bounding_rect :: bounding_rect(),
+-record(qtree_node, { bounds :: bounding_rect(),
                       point :: point(),
                       nodes = [] :: [qtree_node()],
                       val :: any()}).
@@ -14,7 +14,7 @@
 
 -type error() :: {error, Reason :: atom()}.
 
--export([new/1]).
+-export([new/1, add_point/2, remove_point/2]).
 
 %% node
 %%  point (x,y)
@@ -27,14 +27,22 @@ new(BoundingRect) ->
         case validate_bounding(BoundingRect) of
           {ok, valid} ->
             {ok, #qtree_node { point = get_center(BoundingRect),
-                               bounding_rect = BoundingRect,
+                               bounds = BoundingRect,
                                nodes = [],
                                val = undefined }};
           {error, Reason} ->
             {error, Reason}
         end.
 
-add_point(QTree=#qtree_node{ bounding_rect = BoundingRect }, Point) ->
+add_point(QTree=#qtree_node{ bounds = BoundingRect }, Point) ->
+        case is_in_rect(BoundingRect, Point) of
+          true ->
+            {ok, QTree};
+          false ->
+            {error, point_no_in_bounding_rect}
+        end.
+
+remove_point(QTree=#qtree_node{ bounds = BoundingRect }, Point) ->
         case is_in_rect(BoundingRect, Point) of
           true ->
             {ok, QTree};
