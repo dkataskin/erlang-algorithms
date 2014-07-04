@@ -14,7 +14,7 @@
 
 -type error() :: {error, Reason :: atom()}.
 
--export([new/1, add_point/2, remove_point/2]).
+-export([new/1, add_point/2, add_point/3, remove_point/2, remove_point/3]).
 
 %% node
 %%  point (x,y)
@@ -34,7 +34,10 @@ new(BoundingRect) ->
             {error, Reason}
         end.
 
-add_point(QTree=#qtree_node{ bounds = BoundingRect }, Point) ->
+add_point(QTree=#qtree_node{}, Point) ->
+        add_point(QTree, Point, undefined).
+
+add_point(QTree=#qtree_node{ bounds = BoundingRect }, Point, Value) ->
         case is_in_rect(BoundingRect, Point) of
           true ->
             {ok, QTree};
@@ -42,7 +45,10 @@ add_point(QTree=#qtree_node{ bounds = BoundingRect }, Point) ->
             {error, point_no_in_bounding_rect}
         end.
 
-remove_point(QTree=#qtree_node{ bounds = BoundingRect }, Point) ->
+remove_point(QTree=#qtree_node{}, Point) ->
+        remove_point(QTree, Point).
+
+remove_point(QTree=#qtree_node{ bounds = BoundingRect }, Point, Value) ->
         case is_in_rect(BoundingRect, Point) of
           true ->
             {ok, QTree};
