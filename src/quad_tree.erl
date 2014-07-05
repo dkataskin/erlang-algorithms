@@ -117,12 +117,12 @@ create_child_node({{X1, Y1}, {X2, Y2}}, Point) ->
 
 -spec is_leaf_node(QTree :: qtree_node()) -> boolean().
 is_leaf_node(#qtree_node{ bounds = {{X1, _}, {X2, _}} }) ->
-        X2 - X1 =:= 1.
+        X2 - X1 =:= 0.
 
 -spec validate_bounds(BoundingRect :: bounding_rect()) -> {ok, valid} | error().
 validate_bounds({{X1, Y1}, {X2, Y2}}) ->
-        W = erlang:abs(X2 - X1),
-        H = erlang:abs(Y2 - Y1),
+        W = erlang:abs(X2 - X1) + 1,
+        H = erlang:abs(Y2 - Y1) + 1,
         case W =:= H of
           true ->
             case (W band (W - 1)) of
