@@ -13,7 +13,7 @@
 
 -type error() :: {error, Reason :: atom()}.
 
--export([new/1, add_point/2, add_point/3, remove_point/2]).
+-export([new/1, add_point/2, add_point/3, remove_point/2, flatten/1]).
 
 -spec new(BoudingRect :: bounding_rect()) -> {ok, qtree()} | error().
 new(BoundingRect) ->
@@ -47,6 +47,16 @@ remove_point(QTree=#qtree_node{ bounds = BoundingRect }, Point) ->
           false ->
             {error, point_no_in_bounding_rect}
         end.
+
+-spec flatten(QTree :: qtree()) -> [qtree_node()].
+flatten(QTree) ->
+        flatten(QTree, []).
+
+flatten(QTree=#qtree_node { is_leaf = true }, Acc) ->
+        [QTree | Acc];
+
+flatten(#qtree_node { nodes = Nodes }, Acc) ->
+        lists:foldl(fun(QTreeNode, Acc) -> flatten(QTreeNode, Acc) end, Acc, Nodes).
 
 -spec add_valid_point(QTree :: qtree(), Point :: point(), Value :: any()) -> qtree().
 add_valid_point(QTree=#qtree_node{ bounds = BoundingRect, nodes = Nodes }, Point, Value) ->
