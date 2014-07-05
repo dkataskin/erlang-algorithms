@@ -39,7 +39,7 @@ add_point(QTree=#qtree_node{}, Point) ->
 add_point(QTree=#qtree_node{ bounds = BoundingRect }, Point, Value) ->
         case is_in_rect(BoundingRect, Point) of
           true ->
-            {ok, QTree};
+            {ok, add_valid_point(QTree, Point, Value)};
           false ->
             {error, point_no_in_bounding_rect}
         end.
@@ -56,17 +56,51 @@ add_valid_point(QTree=#qtree_node{ bounds = BoundingRect, nodes = Nodes }, Point
         case is_leaf_node(QTree) of
           true ->
             QTree#qtree_node { val = Value };
+
           false ->
-            FilterFun = fun(#qtree_node{ bounds = BoundingRect }) -> is_in_rect(BoundingRect, Point) end,
-            case lists:filter(FilterFun, Nodes) of
-              [] ->
+            case find_child_node(QTree, Point) of
+              undefined ->
                 NewNode = create_child_node(BoundingRect, Point),
                 NewNode1 = add_valid_point(NewNode, Point, Value),
                 QTree#qtree_node { nodes = Nodes ++ [NewNode1] };
-              [Node] ->
+
+              Node ->
                 Node1 = add_valid_point(Node, Point, Value),
-                QTree#qtree_node { nodes = (Nodes -- [Node])++ [Node1] }
+                QTree#qtree_node { nodes = (Nodes -- [Node]) ++ [Node1] }
             end
+        end.
+
+remove_valid_point(QTree=#qtree_node{ nodes = Nodes }, Point) ->
+        case find_child_node(QTree, Point) of
+          undefined ->
+            QTree;
+
+          Node ->
+            case is_leaf_node(Node) of
+              true ->
+                QTree#qtree_node { nodes = Nodes -- [Node] };
+
+              false ->
+                NewNode = remove_valid_point(Node, Point),
+                case NewNode#qtree_node.nodes of
+                  [] ->
+                    QTree#qtree_node { nodes = Nodes -- [Node] };
+
+                  _ ->
+                    QTree#qtree_node { nodes = (Nodes - [Node]) ++ [NewNode] }
+                end
+            end
+        end,
+        ok.
+
+-spec find_child_node(Node :: qtree_node(), Point :: point()) -> undefined | qtree_node().
+find_child_node(#qtree_node{ nodes = Nodes }, Point) ->
+        FilterFun = fun(#qtree_node{ bounds = BoundingRect }) -> is_in_rect(BoundingRect, Point) end,
+        case lists:filter(FilterFun, Nodes) of
+          [] ->
+            undefined;
+          [Node] ->
+            Node
         end.
 
 -spec create_child_node(BoundingRect :: bounding_rect(), Point :: point()) -> qtree_node().
