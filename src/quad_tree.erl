@@ -4,7 +4,6 @@
 -type point() :: {integer(), integer()}.
 -type bounding_rect() :: {LeftTop :: point(), RightBottom :: point()}.
 
-%-record(qtree_leaf_node, { bounds :: bounding_rect(), point :: point(), val :: any()}).
 -record(qtree_node, { bounds :: bounding_rect(),
                       point :: point(),
                       nodes = [] :: [qtree_node()],
@@ -14,7 +13,7 @@
 
 -type error() :: {error, Reason :: atom()}.
 
--export([new/1, add_point/2, add_point/3, remove_point/2, remove_point/3]).
+-export([new/1, add_point/2, add_point/3, remove_point/2]).
 
 %% node
 %%  point (x,y)
@@ -45,57 +44,44 @@ add_point(QTree=#qtree_node{ bounds = BoundingRect }, Point, Value) ->
             {error, point_no_in_bounding_rect}
         end.
 
-remove_point(QTree=#qtree_node{}, Point) ->
-        remove_point(QTree, Point).
-
-remove_point(QTree=#qtree_node{ bounds = BoundingRect }, Point, Value) ->
+remove_point(QTree=#qtree_node{ bounds = BoundingRect }, Point) ->
         case is_in_rect(BoundingRect, Point) of
           true ->
-            {ok, add_valid_point(QTree, Point, Value)};
+            {ok, remove_valid_point(QTree, Point)};
           false ->
             {error, point_no_in_bounding_rect}
         end.
 
 add_valid_point(QTree=#qtree_node{ bounds = BoundingRect, nodes = Nodes }, Point, Value) ->
-        case is_in_rect(BoundingRect, Point) of
+        case is_leaf_node(QTree) of
           true ->
-            case Nodes of
-              [] ->
-                case is_leaf_node(QTree) of
-                  true ->
-                    QTree#qtree_node { val = Value };
-                  false ->
-                    NewNodes = create_child_nodes(BoundingRect),
-                    NewNodes1 = lists:map(fun(QTreeNode) -> add_valid_point(QTreeNode, Point, Value) end, NewNodes),
-                    QTree#qtree_node { nodes = NewNodes1 }
-                end;
-              List ->
-                NewNodes = lists:map(fun(QTreeNode) -> add_valid_point(QTreeNode, Point, Value) end, List),
-                QTree#qtree_node { nodes = NewNodes }
-            end;
+            QTree#qtree_node { val = Value };
           false ->
-            QTree
+            FilterFun = fun(#qtree_node{ bounds = BoundingRect }) -> is_in_rect(BoundingRect, Point) end,
+            case lists:filter(FilterFun, Nodes) of
+              [] ->
+                NewNode = create_child_node(BoundingRect, Point),
+                NewNode1 = add_valid_point(NewNode, Point, Value),
+                QTree#qtree_node { nodes = Nodes ++ [NewNode1] };
+              [Node] ->
+                Node1 = add_valid_point(Node, Point, Value),
+                QTree#qtree_node { nodes = (Nodes -- [Node])++ [Node1] }
+            end
         end.
 
-create_child_nodes({{X1, Y1}, {X2, Y2}}) ->
-        CenterX = X1 + erlang:trunc((X2 - X1) / 2),
-        CenterY = Y1 + erlang:trunc((Y2 - Y1) / 2),
+-spec create_child_node(BoundingRect :: bounding_rect(), Point :: point()) -> qtree_node().
+create_child_node({{X1, Y1}, {X2, Y2}}, Point) ->
+        CX = X1 + erlang:trunc((X2 - X1) / 2),
+        CY = Y1 + erlang:trunc((Y2 - Y1) / 2),
 
-        TopCenter = {CenterX, Y2},
-        TopRight = {X2, Y2},
+        NW = #qtree_node { bounds = {{X1, CY}, {CX, Y2}} },
+        NE = #qtree_node { bounds = {{CX + 1, CY}, {X2, Y2}} },
+        SW = #qtree_node { bounds = {{X1, Y1}, {CX, CY - 1}} },
+        SE = #qtree_node { bounds = {{CX + 1, Y1}, {X2, CY - 1}} },
 
-        CenterLeft = {X1, CenterY},
-        CenterCenter = {CenterX, CenterY},
-
-        BottomLeft = {X1, Y1},
-        BottomCenter = {CenterX, Y1},
-        BottomRight = {X2, Y1},
-
-        NW = #qtree_node { bounds = {CenterLeft, TopCenter} },
-        NE = #qtree_node { bounds = {CenterCenter, TopRight} },
-        SW = #qtree_node { bounds = {BottomLeft, CenterCenter} },
-        SE = #qtree_node { bounds = {BottomCenter, BottomRight} },
-        [NW, NE, SE, SW].
+        FilterFun = fun(#qtree_node{ bounds = BoundingRect }) -> is_in_rect(BoundingRect, Point) end,
+        [ChildNode] = lists:filter(FilterFun, [NW, NE, SW, SE]),
+        ChildNode.
 
 is_leaf_node(#qtree_node{ bounds = {{X1, _}, {X2, _}} }) ->
         X2 - X1 =:= 0.
