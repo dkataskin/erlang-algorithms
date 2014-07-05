@@ -60,7 +60,7 @@ query(QTreeNode=#qtree_node { bounds = {Point, _}, is_leaf = true }, QueryRect, 
             Acc
         end;
 
-query(QTreeNode=#qtree_node { bounds = BoundingRect, nodes = Nodes }, QueryRect, Acc) ->
+query(#qtree_node { bounds = BoundingRect, nodes = Nodes }, QueryRect, Acc) ->
         case intersects(BoundingRect, QueryRect) of
           true ->
             lists:foldl(fun(QTreeNode, Acc) -> query(QTreeNode, QueryRect, Acc) end, Acc, Nodes);
