@@ -95,7 +95,7 @@ remove_valid_point(QTree=#qtree_node{ nodes = Nodes }, Point) ->
                     QTree#qtree_node { nodes = Nodes -- [Node] };
 
                   _ ->
-                    QTree#qtree_node { nodes = (Nodes - [Node]) ++ [NewNode] }
+                    QTree#qtree_node { nodes = (Nodes -- [Node]) ++ [NewNode] }
                 end
             end
         end.
