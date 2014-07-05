@@ -5,8 +5,8 @@
 -type bounding_rect() :: {LeftTop :: point(), RightBottom :: point()}.
 
 -record(qtree_node, { bounds :: bounding_rect(),
-                      point :: point(),
                       nodes = [] :: [qtree_node()],
+                      is_leaf = false :: boolean(),
                       val :: any()}).
 -type qtree_node() :: #qtree_node{}.
 -type qtree() :: qtree_node().
@@ -19,8 +19,7 @@
 new(BoundingRect) ->
         case validate_bounds(BoundingRect) of
           {ok, valid} ->
-            {ok, #qtree_node { point = get_center(BoundingRect),
-                               bounds = BoundingRect,
+            {ok, #qtree_node { bounds = BoundingRect,
                                nodes = [],
                                val = undefined }};
           {error, Reason} ->
@@ -51,7 +50,7 @@ remove_point(QTree=#qtree_node{ bounds = BoundingRect }, Point) ->
 
 -spec add_valid_point(QTree :: qtree(), Point :: point(), Value :: any()) -> qtree().
 add_valid_point(QTree=#qtree_node{ bounds = BoundingRect, nodes = Nodes }, Point, Value) ->
-        case is_leaf_node(QTree) of
+        case QTree#qtree_node.is_leaf of
           true ->
             QTree#qtree_node { val = Value };
 
@@ -75,7 +74,7 @@ remove_valid_point(QTree=#qtree_node{ nodes = Nodes }, Point) ->
             QTree;
 
           Node ->
-            case is_leaf_node(Node) of
+            case Node#qtree_node.is_leaf of
               true ->
                 QTree#qtree_node { nodes = Nodes -- [Node] };
 
@@ -106,17 +105,22 @@ create_child_node({{X1, Y1}, {X2, Y2}}, Point) ->
         CX = X1 + erlang:trunc((X2 - X1) / 2),
         CY = Y1 + erlang:trunc((Y2 - Y1) / 2),
 
-        NW = #qtree_node { bounds = {{X1, CY}, {CX, Y2}} },
-        NE = #qtree_node { bounds = {{CX + 1, CY}, {X2, Y2}} },
-        SW = #qtree_node { bounds = {{X1, Y1}, {CX, CY - 1}} },
-        SE = #qtree_node { bounds = {{CX + 1, Y1}, {X2, CY - 1}} },
+        BoundsNW = {{X1, CY}, {CX, Y2}},
+        BoundsNE = {{CX + 1, CY}, {X2, Y2}},
+        BoundsSW = {{X1, Y1}, {CX, CY - 1}},
+        BoundsSE = {{CX + 1, Y1}, {X2, CY - 1}},
+
+        NW = #qtree_node { bounds = BoundsNW, is_leaf = would_be_leaf(BoundsNW) },
+        NE = #qtree_node { bounds = BoundsNE, is_leaf = would_be_leaf(BoundsNE) },
+        SW = #qtree_node { bounds = BoundsSW, is_leaf = would_be_leaf(BoundsSW) },
+        SE = #qtree_node { bounds = BoundsSE, is_leaf = would_be_leaf(BoundsSE) },
 
         FilterFun = fun(#qtree_node{ bounds = BoundingRect }) -> is_in_rect(BoundingRect, Point) end,
         [ChildNode] = lists:filter(FilterFun, [NW, NE, SW, SE]),
         ChildNode.
 
--spec is_leaf_node(QTree :: qtree_node()) -> boolean().
-is_leaf_node(#qtree_node{ bounds = {{X1, _}, {X2, _}} }) ->
+-spec would_be_leaf(BoundingRect :: bounding_rect()) -> boolean().
+would_be_leaf({{X1, _}, {X2, _}}) ->
         X2 - X1 =:= 0.
 
 -spec validate_bounds(BoundingRect :: bounding_rect()) -> {ok, valid} | error().
@@ -139,10 +143,6 @@ validate_bounds({{X1, Y1}, {X2, Y2}}) ->
           false ->
             {error, sides_not_equal}
         end.
-
--spec get_center(BoundingRect :: bounding_rect()) -> point().
-get_center({{X1, Y1}, {X2, Y2}}) ->
-        {erlang:trunc((X2 - X1) / 2), erlang:trunc((Y2 - Y1) / 2)}.
 
 -spec is_in_rect(BoundingRect :: bounding_rect(), Point :: point()) -> boolean().
 is_in_rect(BoundingRect, Point) ->
