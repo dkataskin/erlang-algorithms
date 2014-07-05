@@ -15,12 +15,6 @@
 
 -export([new/1, add_point/2, add_point/3, remove_point/2]).
 
-%% node
-%%  point (x,y)
-%%  bounds (x,y) - (x,y)
-%%  nodes [nw,ne,sw,se]
-%%  val any()
-
 -spec new(BoudingRect :: bounding_rect()) -> {ok, qtree()} | error().
 new(BoundingRect) ->
         case validate_bounds(BoundingRect) of
@@ -33,10 +27,12 @@ new(BoundingRect) ->
             {error, Reason}
         end.
 
+-spec add_point(QTree :: qtree(), Point :: point()) -> {ok, qtree()} |  error().
 add_point(QTree=#qtree_node{}, Point) ->
         add_point(QTree, Point, undefined).
 
-add_point(QTree=#qtree_node{ bounds = BoundingRect }, Point, Value) ->
+-spec add_point(QTree :: qtree(), Point :: point(), Value :: any()) -> {ok, qtree()} | error().
+add_point(QTree=#qtree_node { bounds = BoundingRect }, Point, Value) ->
         case is_in_rect(BoundingRect, Point) of
           true ->
             {ok, add_valid_point(QTree, Point, Value)};
@@ -44,6 +40,7 @@ add_point(QTree=#qtree_node{ bounds = BoundingRect }, Point, Value) ->
             {error, point_no_in_bounding_rect}
         end.
 
+-spec remove_point(QTree :: qtree(), Point :: point()) -> {ok, qtree()} | error().
 remove_point(QTree=#qtree_node{ bounds = BoundingRect }, Point) ->
         case is_in_rect(BoundingRect, Point) of
           true ->
@@ -52,6 +49,7 @@ remove_point(QTree=#qtree_node{ bounds = BoundingRect }, Point) ->
             {error, point_no_in_bounding_rect}
         end.
 
+-spec add_valid_point(QTree :: qtree(), Point :: point(), Value :: any()) -> qtree().
 add_valid_point(QTree=#qtree_node{ bounds = BoundingRect, nodes = Nodes }, Point, Value) ->
         case is_leaf_node(QTree) of
           true ->
