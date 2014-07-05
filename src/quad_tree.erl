@@ -111,27 +111,24 @@ find_child_node(#qtree_node{ nodes = Nodes }, Point) ->
         end.
 
 -spec create_child_node(BoundingRect :: bounding_rect(), Point :: point()) -> qtree_node().
-create_child_node({{X1, Y1}, {X2, Y2}}, Point) ->
+create_child_node({{X1, Y1}, {X2, Y2}}, Point = {X, Y}) ->
         CX = X1 + erlang:trunc((X2 - X1) / 2),
         CY = Y1 + erlang:trunc((Y2 - Y1) / 2),
 
-        BoundsNW = {{X1, CY}, {CX, Y2}},
-        BoundsNE = {{CX + 1, CY}, {X2, Y2}},
-        BoundsSW = {{X1, Y1}, {CX, CY - 1}},
-        BoundsSE = {{CX + 1, Y1}, {X2, CY - 1}},
+        case CX =:= X1 of
+          true ->
+            #qtree_node { bounds = {{X, Y}, {X, Y}}, is_leaf = true };
 
-        NW = #qtree_node { bounds = BoundsNW, is_leaf = would_be_leaf(BoundsNW) },
-        NE = #qtree_node { bounds = BoundsNE, is_leaf = would_be_leaf(BoundsNE) },
-        SW = #qtree_node { bounds = BoundsSW, is_leaf = would_be_leaf(BoundsSW) },
-        SE = #qtree_node { bounds = BoundsSE, is_leaf = would_be_leaf(BoundsSE) },
+          false ->
+            NW = #qtree_node { bounds = {{X1, CY}, {CX, Y2}} },
+            NE = #qtree_node { bounds = {{CX + 1, CY}, {X2, Y2}} },
+            SW = #qtree_node { bounds = {{X1, Y1}, {CX, CY - 1}} },
+            SE = #qtree_node { bounds = {{CX + 1, Y1}, {X2, CY - 1}} },
 
-        FilterFun = fun(#qtree_node{ bounds = BoundingRect }) -> is_in_rect(BoundingRect, Point) end,
-        [ChildNode] = lists:filter(FilterFun, [NW, NE, SW, SE]),
-        ChildNode.
-
--spec would_be_leaf(BoundingRect :: bounding_rect()) -> boolean().
-would_be_leaf({{X1, _}, {X2, _}}) ->
-        X2 - X1 =:= 0.
+            FilterFun = fun(#qtree_node{ bounds = BoundingRect }) -> is_in_rect(BoundingRect, Point) end,
+            [ChildNode] = lists:filter(FilterFun, [NW, NE, SW, SE]),
+            ChildNode
+        end.
 
 -spec validate_bounds(BoundingRect :: bounding_rect()) -> {ok, valid} | error().
 validate_bounds({{X1, Y1}, {X2, Y2}}) ->
