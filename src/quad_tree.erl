@@ -117,7 +117,7 @@ create_child_node({{X1, Y1}, {X2, Y2}}, Point) ->
 
 -spec is_leaf_node(QTree :: qtree_node()) -> boolean().
 is_leaf_node(#qtree_node{ bounds = {{X1, _}, {X2, _}} }) ->
-        X2 - X1 =:= 0.
+        X2 - X1 =:= 1.
 
 -spec validate_bounds(BoundingRect :: bounding_rect()) -> {ok, valid} | error().
 validate_bounds({{X1, Y1}, {X2, Y2}}) ->
