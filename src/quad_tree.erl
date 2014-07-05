@@ -1,10 +1,38 @@
+% Copyright (c) 2014, Dmitry Kataskin
+% All rights reserved.
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are met:
+%
+% * Redistributions of source code must retain the above copyright notice, this
+% list of conditions and the following disclaimer.
+%
+% * Redistributions in binary form must reproduce the above copyright notice,
+% this list of conditions and the following disclaimer in the documentation
+% and/or other materials provided with the distribution.
+%
+% * Neither the name of the erlchat nor the names of its
+% contributors may be used to endorse or promote products derived from
+% this software without specific prior written permission.
+%
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+% AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+% IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+% DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+% FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+% DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+% SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+% CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+% OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+% OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 -module(quad_tree).
 -author("Dmitry Kataskin").
 
 -type point() :: {integer(), integer()}.
--type bounding_rect() :: {LeftTop :: point(), RightBottom :: point()}.
+-type rect() :: {BottomLeft :: point(), TopRight :: point()}.
 
--record(qtree_node, { bounds :: bounding_rect(),
+-record(qtree_node, { bounds :: rect(),
                       nodes = [] :: [qtree_node()],
                       is_leaf = false :: boolean(),
                       val :: any()}).
@@ -15,7 +43,7 @@
 
 -export([new/1, add_point/2, add_point/3, remove_point/2, query/2, flatten/1]).
 
--spec new(BoudingRect :: bounding_rect()) -> {ok, qtree()} | error().
+-spec new(BoudingRect :: rect()) -> {ok, qtree()} | error().
 new(BoundingRect) ->
         case validate_bounds(BoundingRect) of
           {ok, valid} ->
@@ -48,7 +76,7 @@ remove_point(QTree=#qtree_node{ bounds = BoundingRect }, Point) ->
             {error, point_no_in_bounding_rect}
         end.
 
--spec query(QTree :: qtree(), QueryRect :: bounding_rect()) -> [qtree_node()].
+-spec query(QTree :: qtree(), QueryRect :: rect()) -> [qtree_node()].
 query(QTree, QueryRect) ->
         query(QTree, QueryRect, []).
 
@@ -130,7 +158,7 @@ find_child_node(#qtree_node{ nodes = Nodes }, Point) ->
             Node
         end.
 
--spec create_child_node(BoundingRect :: bounding_rect(), Point :: point()) -> qtree_node().
+-spec create_child_node(BoundingRect :: rect(), Point :: point()) -> qtree_node().
 create_child_node({{X1, Y1}, {X2, Y2}}, Point = {X, Y}) ->
         CX = X1 + erlang:trunc((X2 - X1) / 2),
         CY = Y1 + erlang:trunc((Y2 - Y1) / 2),
@@ -150,7 +178,7 @@ create_child_node({{X1, Y1}, {X2, Y2}}, Point = {X, Y}) ->
             ChildNode
         end.
 
--spec validate_bounds(BoundingRect :: bounding_rect()) -> {ok, valid} | error().
+-spec validate_bounds(BoundingRect :: rect()) -> {ok, valid} | error().
 validate_bounds({{X1, Y1}, {X2, Y2}}) ->
         W = erlang:abs(X2 - X1) + 1,
         H = erlang:abs(Y2 - Y1) + 1,
@@ -171,14 +199,14 @@ validate_bounds({{X1, Y1}, {X2, Y2}}) ->
             {error, sides_not_equal}
         end.
 
--spec is_in_rect(BoundingRect :: bounding_rect(), Point :: point()) -> boolean().
+-spec is_in_rect(BoundingRect :: rect(), Point :: point()) -> boolean().
 is_in_rect(BoundingRect, Point) ->
         {{X1, Y1}, {X2, Y2}} = BoundingRect,
         {X, Y} = Point,
         X >= X1 andalso X =< X2 andalso
         Y >= Y1 andalso Y =< Y2.
 
--spec intersects(Rect1 :: bounding_rect(), Rect2 :: bounding_rect()) -> boolean().
+-spec intersects(Rect1 :: rect(), Rect2 :: rect()) -> boolean().
 intersects(Rect1, Rect2) ->
         {{AX1, AY1}, {AX2, AY2}} = Rect1,
         {{BX1, BY1}, {BX2, BY2}} = Rect2,
