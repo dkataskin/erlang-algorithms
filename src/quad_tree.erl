@@ -13,7 +13,7 @@
 
 -type error() :: {error, Reason :: atom()}.
 
--export([new/1, add_point/2, add_point/3, remove_point/2, flatten/1]).
+-export([new/1, add_point/2, add_point/3, remove_point/2, query/2, flatten/1]).
 
 -spec new(BoudingRect :: bounding_rect()) -> {ok, qtree()} | error().
 new(BoundingRect) ->
@@ -46,6 +46,26 @@ remove_point(QTree=#qtree_node{ bounds = BoundingRect }, Point) ->
             {ok, remove_valid_point(QTree, Point)};
           false ->
             {error, point_no_in_bounding_rect}
+        end.
+
+-spec query(QTree :: qtree(), QueryRect :: bounding_rect()) -> [qtree_node()].
+query(QTree, QueryRect) ->
+        query(QTree, QueryRect, []).
+
+query(QTreeNode=#qtree_node { bounds = {Point, _}, is_leaf = true }, QueryRect, Acc) ->
+        case is_in_rect(QueryRect, Point) of
+          true ->
+            [QTreeNode | Acc];
+          false ->
+            Acc
+        end;
+
+query(QTreeNode=#qtree_node { bounds = BoundingRect, nodes = Nodes }, QueryRect, Acc) ->
+        case intersects(BoundingRect, QueryRect) of
+          true ->
+            lists:foldl(fun(QTreeNode, Acc) -> query(QTreeNode, QueryRect, Acc) end, Acc, Nodes);
+          false ->
+            Acc
         end.
 
 -spec flatten(QTree :: qtree()) -> [qtree_node()].
@@ -157,3 +177,10 @@ is_in_rect(BoundingRect, Point) ->
         {X, Y} = Point,
         X >= X1 andalso X =< X2 andalso
         Y >= Y1 andalso Y =< Y2.
+
+-spec intersects(Rect1 :: bounding_rect(), Rect2 :: bounding_rect()) -> boolean().
+intersects(Rect1, Rect2) ->
+        {{AX1, AY1}, {AX2, AY2}} = Rect1,
+        {{BX1, BY1}, {BX2, BY2}} = Rect2,
+        AX1 =< BX2 andalso AX2 >= BX1 andalso
+        AY1 =< BY2 andalso AY2 >= BY1.
