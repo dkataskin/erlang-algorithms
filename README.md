@@ -17,7 +17,11 @@ Operations on quad tree you have:
 ####new
 You pass bounding rect you get a new tree. Width and Height must be equal and must be power of 2.
 
-`{ok, Tree} = quad_tree:new({{0,0}, {31,31}})`
+`
+
+{ok, Tree} = quad_tree:new({{0,0}, {31,31}})
+
+`
 
 ###add point
 Add random point to the tree. If there is already this point in the tree it will be replaced. You can associate arbitrary value with a node.
