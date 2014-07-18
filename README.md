@@ -56,4 +56,3 @@ Interested in points inside a particular rectangle? That's possible:
 ```
 List = quad_tree:query(Tree, {{0, 0},{31, 31}})
 ```
-
