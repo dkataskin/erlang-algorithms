@@ -61,4 +61,4 @@ List = quad_tree:query(Tree, {{0, 0},{31, 31}})
 
 Copyright © 2014 Dmitriy Kataskin
 
-Licensed under BSD License (see LICENSE).
+Licensed under BSD License (see [LICENSE](LICENSE)).
