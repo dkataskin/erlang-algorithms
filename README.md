@@ -1,11 +1,11 @@
-snippy
+Erlang algorithms and data structures
 ======
 
-A number of useful() | useless() data structure and algorithm implementations in Erlang.
+A number of data structure and algorithm implementations in Erlang.
 
 ###quad_tree.erl
 
-As the name states, this is yet another quad tree implementation in Erlang. More on quad_trees here http://en.wikipedia.org/wiki/Quadtree.
+Yet another quadtree implementation in Erlang. More on quad_trees here http://en.wikipedia.org/wiki/Quadtree.
 
 Operations on quad tree you have:
 * new
@@ -56,3 +56,9 @@ Interested in points inside a particular rectangle? That's possible:
 ```
 List = quad_tree:query(Tree, {{0, 0},{31, 31}})
 ```
+
+## License
+
+Copyright © 2014 Dmitriy Kataskin
+
+Licensed under BSD License (see LICENSE).
